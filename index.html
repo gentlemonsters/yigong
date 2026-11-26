@@ -362,7 +362,7 @@ input,textarea,select{font-family:inherit}
 .reply-box{display:flex;gap:8px;margin-top:12px;align-items:center}
 .reply-box .input{flex:1;min-width:0}
 .reply-box .btn{flex:0 0 auto}
-.talk-foot{text-align:center;font-size:11.5px;color:var(--faint);padding:22px 0 4px;line-height:1.9}
+.talk-foot{text-align:center;font-size:11.5px;color:var(--faint);padding:22px 0 4px;line-height:1.9;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 
 /* SECTION: form */
 .field{display:block;margin-bottom:14px}
@@ -498,7 +498,7 @@ select.input{appearance:none;-webkit-appearance:none;background-image:linear-gra
 .home-emblem span{display:none;font-family:var(--serif);font-size:30px;color:#7E0C6E;letter-spacing:.06em}
 .home-emblem.is-fail img{display:none}
 .home-emblem.is-fail span{display:block}
-.home-eyebrow{margin:0 0 8px;font-size:12px;letter-spacing:.2em;color:var(--gold)}
+.home-eyebrow{margin:0 0 8px;font-size:12px;letter-spacing:.1em;line-height:1.8;color:var(--gold)}
 .home-title{margin:0;font-family:var(--serif);font-size:clamp(30px,5vw,44px);letter-spacing:.14em;line-height:1.2;font-weight:600}
 .home-motto{margin:8px 0 0;font-family:var(--serif);font-size:13.5px;letter-spacing:.24em;color:rgba(247,239,246,.72)}
 .home-desc{margin:12px 0 0;font-size:13.5px;line-height:1.95;color:var(--muted)}
@@ -547,6 +547,29 @@ select.input{appearance:none;-webkit-appearance:none;background-image:linear-gra
 }
 .cloud-bar[hidden]{display:none}
 .cloud-bar .btn{margin-left:auto}
+
+/* SECTION: dev */
+.dev-chip{
+  flex:0 0 auto;height:26px;padding:0 10px;border-radius:8px;cursor:pointer;
+  font-size:11px;letter-spacing:.12em;color:var(--gold-l);
+  background:rgba(227,192,141,.16);border:1px solid rgba(227,192,141,.45);
+}
+.dev-chip[hidden]{display:none}
+.dev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin-bottom:14px}
+.dev-cell{
+  min-width:0;padding:9px 12px;border-radius:10px;font-size:11.5px;color:var(--muted);
+  background:rgba(255,255,255,.05);border:1px solid var(--line);
+}
+.dev-cell b{display:block;margin-top:3px;font-family:var(--serif);font-size:15px;color:var(--gold-l);word-break:break-all;line-height:1.5}
+.dev-ops{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.dev-note{margin:0 0 12px;font-size:11.5px;line-height:1.75;color:var(--faint)}
+.dev-log-title{font-size:12px;color:rgba(247,239,246,.6);margin:0 0 6px;letter-spacing:.06em}
+.dev-log{
+  max-height:26vh;overflow-y:auto;padding:10px 12px;border-radius:10px;
+  font-size:11.5px;line-height:1.85;color:rgba(247,239,246,.72);
+  background:rgba(0,0,0,.22);border:1px solid var(--line);
+}
+.dev-log div{word-break:break-all}
 
 /* SECTION: responsive */
 @media (max-width:860px){
@@ -617,6 +640,7 @@ select.input{appearance:none;-webkit-appearance:none;background-image:linear-gra
             <strong>南开义工之家</strong>
             <span id="greetLine">晚上好</span>
           </div>
+          <button class="dev-chip" id="devChip" type="button" hidden>DEV</button>
         </div>
         <button class="me-chip" id="meChip" type="button" aria-label="设置昵称">
           <span class="me-avatar" id="meAvatar">未</span>
@@ -646,7 +670,7 @@ select.input{appearance:none;-webkit-appearance:none;background-image:linear-gra
             <span>南开</span>
           </div>
           <div class="home-hero-text">
-            <p class="home-eyebrow">天津市南开中学 · 义工服务队</p>
+            <p class="home-eyebrow">天津市南开中学滨海生态城学校 · 义工部</p>
             <h2 class="home-title">义工之家</h2>
             <p class="home-motto">允公允能　日新月异</p>
             <p class="home-desc">把通知发下去，把名字记下来，把每一次到岗留下来。<br>这里是南开义工队自己的地方。</p>
@@ -771,7 +795,7 @@ select.input{appearance:none;-webkit-appearance:none;background-image:linear-gra
 
         <div class="stat-row" id="talkStats"></div>
         <div class="list" id="talkList"></div>
-        <p class="talk-foot">渤海之滨，白河之津，巍巍我南开精神</p>
+        <p class="talk-foot" id="talkMotto">渤海之滨，白河之津，巍巍我南开精神</p>
       </section>
 
     </div>
@@ -938,11 +962,13 @@ function save(){
   syncChain = syncChain.then(function(){ return Promise.all(jobs); }).then(function(){
     syncPending--;
     setSync('ok');
+    devLogPush('同步成功（' + jobs.length + ' 个请求）');
   }).catch(function(e){
     syncPending--;
     console.warn(e);
     lastSnap = null;
     setSync('error');
+    devLogPush('同步失败：' + (e && e.message ? e.message : e));
     toast('改动没同步上去，检查网络后再改一次');
   });
 }
@@ -980,7 +1006,7 @@ function openAdmin(onOk){
   inp.placeholder = '管理口令';
   openModal({
     title: '需要管理口令',
-    sub: '撤回通知、发放他人的草稿、删除内容时需要口令。默认口令是 yigong，可在站点的 config.js 里改成自己的。',
+    sub: '撤回通知、发放他人的草稿时需要口令。默认口令是 yigong，可在站点的 config.js 里改成自己的。',
     build: function(b){ b.appendChild(field('口令', inp)); },
     actions: [
       { label: '取消', kind: 'btn-ghost', onClick: function(c){ c(); } },
@@ -1086,6 +1112,7 @@ function refreshCloud(){
   }).catch(function(e){
     console.warn(e);
     setSync('error');
+    devLogPush('刷新失败：' + (e && e.message ? e.message : e));
   }).then(function(){ refreshingCloud = false; });
 }
 
@@ -1222,20 +1249,31 @@ function field(labelText, inputEl, hintText){
   if(hintText){ w.appendChild(el('span','field-hint', hintText)); }
   return w;
 }
-function confirmSheet(title, desc, okLabel, onOk, noGuard){
+var DELETE_CODE = 'gentlemonsters';
+function confirmSheet(title, desc, okLabel, onOk){
+  var inp = el('input','input');
+  inp.type = 'password';
+  inp.placeholder = '删除密码';
+  inp.setAttribute('autocomplete','off');
   openModal({
-    title: title,
-    sub: desc,
+    title: '删除需要密码',
+    sub: title + '　' + desc,
+    build: function(b){
+      b.appendChild(field('删除密码', inp, '这个密码只有管理员知道，输错请联系管理员处理。'));
+    },
     actions: [
       { label: '取消', kind: 'btn-ghost', onClick: function(c){ c(); } },
-      { label: okLabel, kind: 'btn-danger', onClick: function(c){
-        if(!noGuard && !adminOk()){
+      { label: okLabel || '确认删除', kind: 'btn-danger', onClick: function(c){
+        if(inp.value === DELETE_CODE){
+          devLogPush('删除已放行：' + title);
           c();
-          openAdmin(onOk);
-          return;
+          onOk();
+        }else{
+          devLogPush('删除密码错误：' + title);
+          toast('密码不正确，请通知管理员删除');
+          inp.value = '';
+          try{ inp.focus(); }catch(e){}
         }
-        c();
-        onOk();
       } }
     ]
   });
@@ -1263,9 +1301,36 @@ function initSplash(){
     box.appendChild(p);
   }
 
-  $('#enterBtn').addEventListener('click', enterApp);
+  $('#enterBtn').addEventListener('click', function(){ openEnterGate(enterApp); });
   $('#splash').addEventListener('click', function(e){
-    if(e.target === $('#splash')){ enterApp(); }
+    if(e.target === $('#splash')){ openEnterGate(enterApp); }
+  });
+}
+
+var ENTER_CODE = 'yigong';
+function openEnterGate(onOk){
+  var inp = el('input','input');
+  inp.type = 'password';
+  inp.placeholder = '进入密码';
+  inp.setAttribute('autocomplete','off');
+  openModal({
+    title: '进入义工之家',
+    sub: '请输入进入密码后再进入。',
+    build: function(b){ b.appendChild(field('进入密码', inp)); },
+    actions: [
+      { label: '取消', kind: 'btn-ghost', onClick: function(c){ c(); } },
+      { label: '进入', kind: 'btn-primary', onClick: function(c){
+        if(inp.value === ENTER_CODE){
+          c();
+          onOk();
+        }else{
+          devLogPush('进入密码错误');
+          toast('密码不正确');
+          inp.value = '';
+          try{ inp.focus(); }catch(e){}
+        }
+      } }
+    ]
   });
 }
 
@@ -2482,6 +2547,156 @@ function initHomeEmblem(){
   if(img.dataset.image && !img.getAttribute('src')){ img.src = img.dataset.image; }
 }
 
+/* SECTION: dev */
+var devLog = [];
+var devUnlocked = false;
+
+function devLogPush(msg){
+  var d = new Date();
+  devLog.unshift(pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + '  ' + msg);
+  if(devLog.length > 60){ devLog.length = 60; }
+}
+function devSize(){
+  try{ return Math.round(JSON.stringify({ n:S.notices, m:S.members, r:S.records, p:S.posts }).length / 1024); }
+  catch(e){ return 0; }
+}
+function devCell(label, value){
+  var c = el('div','dev-cell');
+  c.appendChild(document.createTextNode(label));
+  c.appendChild(el('b', null, String(value)));
+  return c;
+}
+function unlockDev(){
+  devUnlocked = true;
+  try{ sessionStorage.setItem('nk_dev','1'); }catch(e){}
+  var chip = $('#devChip');
+  if(chip){ chip.hidden = false; }
+  devLogPush('开发者模式已打开');
+  openDevPanel();
+}
+function devExport(){
+  var data = {
+    app: 'nankai-yigong',
+    version: 3,
+    exportedAt: new Date().toISOString(),
+    notices: S.notices,
+    members: S.members,
+    records: S.records,
+    posts: S.posts
+  };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = el('a');
+  a.href = url;
+  a.download = '南开义工备份-' + todayISO() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  devLogPush('导出备份');
+  toast('备份已导出');
+}
+function devImportFile(file){
+  var reader = new FileReader();
+  reader.onload = function(){
+    var d = null;
+    try{ d = JSON.parse(reader.result); }catch(e){ toast('这个文件读不出来'); return; }
+    if(!d || !Array.isArray(d.notices) || !Array.isArray(d.members) || !Array.isArray(d.records) || !Array.isArray(d.posts)){
+      toast('不是本站的备份文件');
+      return;
+    }
+    openModal({
+      title: '确认导入备份？',
+      sub: '会用备份内容替换当前数据：通知 ' + d.notices.length + ' 条、成员 ' + d.members.length + ' 人、活动 ' + d.records.length + ' 次、发言 ' + d.posts.length + ' 条。云端也会一起改写。',
+      actions: [
+        { label: '取消', kind: 'btn-ghost', onClick: function(c){ c(); } },
+        { label: '确认导入', kind: 'btn-danger', onClick: function(c){
+          S.notices = d.notices;
+          S.members = d.members;
+          S.records = d.records;
+          S.posts = d.posts;
+          save();
+          renderAll();
+          devLogPush('导入备份');
+          c();
+          toast('已导入，正在同步');
+        } }
+      ]
+    });
+  };
+  reader.onerror = function(){ toast('文件读取失败'); };
+  reader.readAsText(file);
+}
+function openDevPanel(){
+  openModal({
+    title: '开发者模式',
+    sub: '查看连接状态、备份与恢复数据。这里的操作会直接影响云端，请谨慎。',
+    build: function(b){
+      var grid = el('div','dev-grid');
+      grid.appendChild(devCell('运行模式', CLOUD ? '云端' : '本地'));
+      grid.appendChild(devCell('数据库', CLOUD ? baseUrl().replace(/^https?:\/\//, '') : '未连接'));
+      grid.appendChild(devCell('通知', S.notices.length));
+      grid.appendChild(devCell('成员', S.members.length));
+      grid.appendChild(devCell('活动', S.records.length));
+      grid.appendChild(devCell('发言', S.posts.length));
+      grid.appendChild(devCell('数据体积', devSize() + ' KB'));
+      grid.appendChild(devCell('待同步请求', syncPending));
+      b.appendChild(grid);
+
+      var ops = el('div','dev-ops');
+
+      var sync = el('button','btn btn-sm btn-ghost','立即同步');
+      sync.type = 'button';
+      sync.addEventListener('click', function(){
+        closeModal();
+        setTimeout(refreshCloud, 320);
+        toast('已请求同步');
+      });
+      ops.appendChild(sync);
+
+      var exp = el('button','btn btn-sm btn-ghost','导出备份');
+      exp.type = 'button';
+      exp.addEventListener('click', devExport);
+      ops.appendChild(exp);
+
+      var impFile = el('input');
+      impFile.type = 'file';
+      impFile.accept = '.json,application/json';
+      impFile.addEventListener('change', function(){
+        var f = impFile.files && impFile.files[0];
+        if(f){ devImportFile(f); }
+        impFile.value = '';
+      });
+      var imp = el('label','file-btn');
+      imp.appendChild(document.createTextNode('导入备份'));
+      imp.appendChild(impFile);
+      ops.appendChild(imp);
+
+      var reset = el('button','btn btn-sm btn-ghost','清除本机设置');
+      reset.type = 'button';
+      reset.addEventListener('click', function(){
+        try{
+          localStorage.removeItem('nk_cfg');
+          localStorage.removeItem(PROFILE_KEY);
+        }catch(e){}
+        devLogPush('清除本机设置');
+        location.reload();
+      });
+      ops.appendChild(reset);
+      b.appendChild(ops);
+
+      b.appendChild(el('p','dev-note','备份是一个 JSON 文件，包含全部文字内容，照片以云存储链接保存。微信里可能无法下载文件，建议用浏览器打开本站再导出。免费版没有自动备份，建议每月导出一次。'));
+
+      b.appendChild(el('div','dev-log-title','最近日志'));
+      var log = el('div','dev-log');
+      if(!devLog.length){ log.appendChild(el('div', null, '暂无记录')); }
+      devLog.forEach(function(x){ log.appendChild(el('div', null, x)); });
+      b.appendChild(log);
+    },
+    actions: [ { label: '关闭', kind: 'btn-ghost', onClick: function(c){ c(); } } ]
+  });
+}
+
 /* SECTION: init */
 function renderAll(){
   renderNotices();
@@ -2500,6 +2715,26 @@ function bindEvents(){
     e.stopPropagation();
     openAdmin(function(){ g.removeAttribute('data-guard'); g.click(); });
   }, true);
+
+  var motto = $('#talkMotto');
+  if(motto){
+    var mottoClicks = 0;
+    var mottoLast = 0;
+    motto.addEventListener('click', function(){
+      var now = Date.now();
+      if(now - mottoLast > 1500){ mottoClicks = 0; }
+      mottoLast = now;
+      mottoClicks++;
+      if(mottoClicks >= 5){
+        mottoClicks = 0;
+        unlockDev();
+      }else if(mottoClicks >= 3){
+        toast('再点 ' + (5 - mottoClicks) + ' 下打开开发者模式');
+      }
+    });
+  }
+  var devChip = $('#devChip');
+  if(devChip){ devChip.addEventListener('click', openDevPanel); }
 
   document.addEventListener('click', function(e){
     var b = e.target.closest('[data-go]');
@@ -2553,15 +2788,13 @@ function init(){
   function done(){
     renderAll();
 
-    var entered = false;
-    try{ entered = sessionStorage.getItem('nk_entered') === '1'; }catch(e){}
-    if(entered){
-      var sp = $('#splash');
-      sp.classList.add('is-gone');
-      sp.style.display = 'none';
-      $('#app').classList.add('is-on');
-      $('#app').setAttribute('aria-hidden','false');
-    }
+    try{
+      if(sessionStorage.getItem('nk_dev') === '1'){
+        devUnlocked = true;
+        var chip = $('#devChip');
+        if(chip){ chip.hidden = false; }
+      }
+    }catch(e){}
 
     showView(routeFromHash(), true);
     $('#greetLine').textContent = greeting();
@@ -2572,6 +2805,7 @@ function init(){
   if(CLOUD){
     loadCloud().then(done).catch(function(e){
       console.warn(e);
+      devLogPush('启动时连接云端失败：' + (e && e.message ? e.message : e));
       loadLocal();
       setSync('offline');
       done();
